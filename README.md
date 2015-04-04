@@ -10,5 +10,5 @@ ShaderX7 Advanced Rendering Techniques
 Chapter 2.9 Light Indexed Deferred Rendering
 
 **Screen shot from the demo**
-![Screenshot](DemoScreenShot_small.jpg?raw=true "Demo screenshot")
+![Screenshot](DemoScreenshot_small.jpg?raw=true "Demo screenshot")
 
