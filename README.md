@@ -1,6 +1,7 @@
 # Light Indexed Deferred Rendering
 
-*2007 Research project*
+*Note: Research project from 2007*
+
 Current rasterization based renderers utilize one of two main techniques for lighting, forward rendering and deferred rendering. However, both of these techniques have disadvantages. 
 Forward rendering does not scale well with complex lighting scenes and standard deferred rendering has high memory usage and trouble with transparency and MSAA.
 
