@@ -1,0 +1,35 @@
+/////////////////////////////////////////////////////////////////////
+// LightingMP_stone_ambient
+// This shader program renders the ambient used in multi-pass forward
+// render technique for the stone material.
+//
+// Based on the ATI Render monkey stone shader
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+varying vec3 vScaledPosition;
+
+void main(void)
+{
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+  // Just output model coordinates for this so marble doesn't swim all over
+  vScaledPosition = gl_Vertex.xyz * 0.009;
+}
+
+
+[Fragment shader]
+
+uniform sampler3D Noise;
+varying vec3 vScaledPosition;
+
+void main(void)
+{
+  float noisy = texture3D(Noise, vScaledPosition).x;
+
+  // Base marble color
+  float marble = (0.2 + 5.0 * abs(noisy - 0.5));
+
+	gl_FragColor.rgb = vec3(0.2 * marble);
+}

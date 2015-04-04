@@ -1,0 +1,28 @@
+/////////////////////////////////////////////////////////////////////
+// PlainColor
+// This shader program simply outputs the OpenGL supplied color 
+// multiplied by a texture.
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+varying vec2 texCoord;
+
+void main(){
+
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+
+	texCoord = gl_MultiTexCoord0.xy;
+	gl_FrontColor = gl_Color;
+}
+
+
+[Fragment shader]
+
+uniform sampler2D Base;
+
+varying vec2 texCoord;
+
+void main(){
+	gl_FragColor = texture2D(Base, texCoord) * gl_Color;
+}

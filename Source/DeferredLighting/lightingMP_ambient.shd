@@ -1,0 +1,58 @@
+/////////////////////////////////////////////////////////////////////
+// LightingMP_ambient
+// This shader program renders the ambient used in multi-pass forward
+// render technique.
+//
+// This code is taken directly from the Humus DynamicLighting demo
+/////////////////////////////////////////////////////////////////////
+[Vertex shader]
+
+attribute vec2 textureCoord;
+attribute vec3 tangent;
+attribute vec3 binormal;
+attribute vec3 normal;
+
+uniform vec3 camPos;
+
+varying vec2 texCoord;
+varying vec3 vVec;
+
+void main(){
+
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+  
+	texCoord = textureCoord;
+
+	vec3 viewVec = camPos - gl_Vertex.xyz;
+	vVec.x = dot(viewVec, tangent);
+	vVec.y = dot(viewVec, binormal);
+	vVec.z = dot(viewVec, normal);
+}
+
+
+[Fragment shader]
+
+uniform sampler2D Base;
+uniform sampler2D Bump;
+
+uniform vec2 plxCoeffs;
+uniform bool hasParallax;
+
+varying vec2 texCoord;
+varying vec3 vVec;
+
+void main(){
+
+  vec3 viewVec = normalize(vVec);
+
+	vec2 plxTexCoord = texCoord;
+	if (hasParallax){
+		float height = texture2D(Bump, texCoord).w;
+		float offset = height * plxCoeffs.x + plxCoeffs.y;
+		plxTexCoord += offset * viewVec.xy;
+	}
+
+	vec4 base = texture2D(Base, plxTexCoord);
+
+	gl_FragColor = 0.2 * base;
+}

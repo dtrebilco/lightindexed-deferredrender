@@ -1,0 +1,69 @@
+/////////////////////////////////////////////////////////////////////
+// LightingMP_stone
+// This shader program renders a single point light similar to 
+// lightingMP except using a stone-like surface.
+//
+// Based on the ATI Render monkey stone shader
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+uniform vec3 lightPos;
+uniform vec3 camPos;
+uniform float invRadius;
+
+varying vec3 vScaledPosition;
+varying vec3 vNormalES;
+
+varying vec3 lVec;
+varying vec3 vVec;
+
+void main(void)
+{
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+  // Just output model coordinates for this so marble doesn't swim all over
+  vScaledPosition = gl_Vertex.xyz * 0.009;
+
+  lVec = invRadius * (lightPos - gl_Vertex.xyz);
+  lVec = gl_NormalMatrix * lVec;
+
+  // Put position and normal in eye space
+  vVec  = vec3(gl_ModelViewMatrix * gl_Vertex);
+  //vViewVec.z *=-1.0;
+  vNormalES = gl_NormalMatrix * gl_Normal;
+}
+
+
+[Fragment shader]
+
+uniform vec3 lightColor;
+
+uniform sampler3D Noise;
+
+varying vec3 vScaledPosition;
+varying vec3 vNormalES;
+
+varying vec3 lVec;
+varying vec3 vVec;
+
+void main(void)
+{
+  float noisy = texture3D(Noise, vScaledPosition).x;
+
+  // Base marble color
+  float marble = (0.2 + 5.0 * abs(noisy - 0.5));
+	float atten = saturate(1.0 - dot(lVec, lVec));
+
+  vec3 lightVec = normalize(lVec);
+	vec3 viewVec = normalize(vVec);
+  vec3 normal = normalize(vNormalES);
+
+  // Simple lighting
+	float diffuse = saturate(dot(lightVec, normal));
+	float specular = pow(saturate(dot(reflect(viewVec, normal), lightVec)), 24.0);
+
+  // We assume dark parts of the marble reflects light better
+  float Ks = saturate(1.1 - 1.3 * marble);
+	gl_FragColor.rgb = atten * lightColor * (diffuse * marble + Ks * specular);
+}

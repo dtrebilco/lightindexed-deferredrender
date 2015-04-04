@@ -1,0 +1,54 @@
+/////////////////////////////////////////////////////////////////////
+// CompareTex
+// This shader program tests the accuracy of the floating point math 
+// on the hardware.
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+varying vec2 texCoord;
+
+void main(){
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+	texCoord = gl_MultiTexCoord0.xy;
+}
+
+
+[Fragment shader]
+
+uniform sampler2D BaseTex; // The texture to lookup the compare value
+uniform vec2 cmpLimits;    // The limits to compare against
+varying vec2 texCoord;
+
+void main(){
+
+  // Lookup the texture with the scale values
+  vec4 texLookup = texture2D(BaseTex, texCoord);
+
+  // Scale the texture lookup
+  texLookup = ceil(texLookup * 254.5 );
+
+  // Compare agains the passed limit
+  vec4 outColor = vec4(0.0);
+  if(texLookup.x >= cmpLimits.x && texLookup.x < cmpLimits.y)
+  {
+    outColor = vec4(1.0);
+  }
+  else
+  {
+    outColor = vec4(texLookup.x - cmpLimits.x, 0.0, 0.0, 1.0);
+  }
+  
+  if(texLookup.x == cmpLimits.x)
+  {
+    outColor = vec4(1.0, 1.0, 0.0, 1.0);
+  }
+  /*
+  if(cmpLimits.x == 7.0)
+  {
+    outColor = vec4(1.0, 0.0, 0.0,1.0);
+  }*/
+
+
+	gl_FragColor = outColor;
+}

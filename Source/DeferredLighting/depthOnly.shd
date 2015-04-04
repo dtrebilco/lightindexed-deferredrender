@@ -1,0 +1,17 @@
+/////////////////////////////////////////////////////////////////////
+// DepthOnly
+// This shader program simply outputs the depth position
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+void main(){
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+}
+
+
+[Fragment shader]
+
+void main(){
+
+}

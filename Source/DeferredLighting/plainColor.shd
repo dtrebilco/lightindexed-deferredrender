@@ -1,0 +1,17 @@
+/////////////////////////////////////////////////////////////////////
+// PlainColor
+// This shader program simply outputs the OpenGL supplied color.
+/////////////////////////////////////////////////////////////////////
+[Vertex shader]
+
+void main(){
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+	gl_FrontColor = gl_Color;
+}
+
+
+[Fragment shader]
+
+void main(){
+	gl_FragColor = gl_Color;
+}

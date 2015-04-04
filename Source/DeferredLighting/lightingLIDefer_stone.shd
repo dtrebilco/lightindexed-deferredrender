@@ -1,0 +1,166 @@
+/////////////////////////////////////////////////////////////////////
+// LightingLIDefer_stone
+// This shader program does the same as the LightingLIDefer program 
+// except rendering with a stone like texture.
+// See LightingLIDefer for full details
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+varying vec4 projectSpace;
+varying vec3 vScaledPosition;
+varying vec3 vNormalES;
+varying vec3 vVec;
+
+void main(){
+  projectSpace = gl_ModelViewProjectionMatrix * gl_Vertex;  
+  gl_Position = projectSpace;
+
+  projectSpace.xy = (projectSpace.xy + vec2(projectSpace.w)) * 0.5;
+
+  // Just output model coordinates for this so marble doesn't swim all over
+  vScaledPosition = gl_Vertex.xyz * 0.009;
+
+  // Camera pos not in model space?
+  vVec = (gl_ModelViewMatrix * gl_Vertex).xyz;
+  vNormalES = gl_NormalMatrix * gl_Normal;
+}
+
+
+
+[Fragment shader]
+
+
+#ifndef __GLSL_CG_DATA_TYPES
+#define hfloat float
+#define hvec2 vec2
+#define hvec3 vec3
+#define hvec4 vec4
+#else
+#define hfloat half
+#define hvec2 half2
+#define hvec3 half3
+#define hvec4 half4
+#endif
+
+uniform sampler3D Noise;
+uniform sampler2D BitPlane;
+
+// TODO: Combine into one texture? use 1D textures?
+uniform sampler1D LightPosTex;
+uniform sampler1D LightColorTex;
+
+varying vec4 projectSpace;
+varying vec3 vScaledPosition;
+varying vec3 vNormalES;
+varying vec3 vVec;
+
+void main(){
+
+  hfloat noisy = texture3D(Noise, vScaledPosition).x;
+
+  // Base marble color
+  hfloat marble = (0.2 + 5.0 * abs(noisy - 0.5));
+  hfloat Ks = saturate(1.1 - 1.3 * marble);
+
+	vec3 viewVec = normalize(vVec);
+  vec3 normal = normalize(vNormalES);
+
+  // Set initial ambient lighting
+  hvec3 lighting = hvec3(marble * 0.2);
+
+  // Get reflection view vector
+  hvec3 reflVec = reflect(viewVec, -normal);
+
+  // Look up the bit planes texture
+  hvec4 packedLight = texture2DProj(BitPlane, projectSpace);
+
+#if OVERLAP_LIGHTS >= 3
+
+  // Unpack the bit-packed texture (Use Geforce 8 extensions?)
+
+  // Set depending on the texture size
+  hvec4 unpackConst = vec4(4.0, 16.0, 64.0, 256.0) / 256.0;
+
+  // Expand out to the 0..255 range (ceil to avoid precision errors)
+  hvec4 floorValues = ceil(packedLight * 254.5);
+
+#if OVERLAP_LIGHTS == 3
+  // Ignore the first value when using 3 lights 
+  // TODO: could avoid this multiply and floor if lights were processed in the reverse order
+  floorValues = floor(floorValues * 0.25);
+#endif //OVERLAP_LIGHTS == 3
+
+  // Unpack each lighting channel
+  for(int i=0; i< OVERLAP_LIGHTS; i++)
+  {
+    packedLight = floorValues * 0.25;
+    floorValues = floor(packedLight);
+    hvec4 fracParts = packedLight - floorValues;
+
+    hfloat lightIndex = dot(fracParts, unpackConst);
+
+#elif OVERLAP_LIGHTS == 2
+
+  // Light indexes packaed as (lightIndex1, 1 - LightIndex2)
+  packedLight.g =  1.0 - packedLight.g;
+
+  // If the second light index is the same as the first one, ignore it
+  // TODO add a range check? Use alpha channel blending somehow to detect more than one render?
+  if(abs(packedLight.g - packedLight.r) < 0.001) 
+  {
+    packedLight.g = 0.0;
+  }
+
+  // Expand out to the 0..255 range and scale back to fix precision errors
+  packedLight = ceil(packedLight * 254.5) / 256.0;
+
+  for(int i=0; i< 2; i++)
+  {
+    hfloat lightIndex = packedLight[i];
+
+#else
+
+  // Expand out to the 0..255 range and scale back to fix precision errors
+  packedLight = ceil(packedLight * 254.5) / 256.0;
+
+  {
+    // No unpack- direct index lookup
+    hfloat lightIndex = packedLight.r;
+
+#endif
+
+    // Possibly add a half texel offset to account for possible precision issues?
+    //lightIndex += 0.5/256.0;
+
+    // Lookup the Light position (with inverse radius in alpha)
+    vec4 lightViewPos = texture1D(LightPosTex, lightIndex); 
+
+    // Lookup the light color
+    hvec3 lightColor = texture1D(LightColorTex, lightIndex).rgb;
+
+    // Get the vector from the light center to the surface
+    vec3 lightVec = lightViewPos.xyz - vVec;
+    
+    // Scale based on the light radius
+    vec3 lVec = lightVec * lightViewPos.a;
+
+    // Calculate attenuation
+	  float atten = saturate(1.0 - dot(lVec, lVec));
+    // TODO: Add a checkd for back facing polygons - like humus demo? - dot product with tangent space normal in view space?
+    //atten *= float(lVec.z > 0.0);
+
+    // Calculate the light normal
+    lightVec = normalize(lightVec);
+    
+    // TODO: store the light values and combine later? (do one "pow")
+		hfloat diffuse = saturate(dot(lightVec, normal));
+		hfloat specular = pow(saturate(dot(lightVec, reflVec)), 24.0);
+
+		lighting += atten * lightColor * (diffuse * marble + Ks * specular);
+  }
+
+  gl_FragColor.rgb = lighting;
+  gl_FragColor.a = 1.0;
+}
+

@@ -1,0 +1,83 @@
+/////////////////////////////////////////////////////////////////////
+// LightingMP
+// This shader program renders geometry lit by a single point light.
+// For this reason it is a multi-pass forward render technique for
+// rendering X number of lighhts.
+//
+// This code is taken directly from the Humus DynamicLighting demo
+/////////////////////////////////////////////////////////////////////
+
+[Vertex shader]
+
+uniform vec3 lightPos;
+uniform vec3 camPos;
+uniform float invRadius;
+
+attribute vec2 textureCoord;
+attribute vec3 tangent;
+attribute vec3 binormal;
+attribute vec3 normal;
+
+varying vec2 texCoord;
+varying vec3 lVec;
+varying vec3 vVec;
+
+void main(){
+
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;  
+
+	texCoord = textureCoord;
+
+	vec3 lightVec = invRadius * (lightPos - gl_Vertex.xyz);
+	lVec.x = dot(lightVec, tangent);
+	lVec.y = dot(lightVec, binormal);
+	lVec.z = dot(lightVec, normal);
+
+	vec3 viewVec = camPos - gl_Vertex.xyz;
+	vVec.x = dot(viewVec, tangent);
+	vVec.y = dot(viewVec, binormal);
+	vVec.z = dot(viewVec, normal);
+}
+
+
+[Fragment shader]
+
+uniform sampler2D Base;
+uniform sampler2D Bump;
+
+uniform vec3 lightColor;
+uniform vec2 plxCoeffs;
+
+uniform bool hasParallax;
+
+varying vec2 texCoord;
+varying vec3 lVec;
+varying vec3 vVec;
+
+void main(){
+	vec3 lighting = vec3(0.0);
+
+	float atten = saturate(1.0 - dot(lVec, lVec));
+	atten *= float(lVec.z > 0.0);
+
+  vec3 lightVec = normalize(lVec);
+	vec3 viewVec = normalize(vVec);
+
+	vec2 plxTexCoord = texCoord;
+	if (hasParallax){
+		float height = texture2D(Bump, texCoord).w;
+		float offset = height * plxCoeffs.x + plxCoeffs.y;
+		plxTexCoord += offset * viewVec.xy;
+	}
+
+	vec3 base = texture2D(Base, plxTexCoord).rgb;
+	vec3 bump = texture2D(Bump, plxTexCoord).xyz * 2.0 - 1.0;
+	bump = normalize(bump);
+
+	float diffuse = saturate(dot(lightVec, bump));
+	float specular = pow(saturate(dot(reflect(-viewVec, bump), lightVec)), 16.0);
+
+	lighting = atten * lightColor * (diffuse * base + 0.6 * specular);
+
+  gl_FragColor.rgb = lighting;
+}
