@@ -5,6 +5,7 @@ This demo is a technical demonstration of the lighting technique
 "Light Indexed Deferred Rendering".
 
 A full explanation of the technique used in this demo can be found at:
+https://github.com/dtrebilco/lightindexed-deferredrender/blob/master/LightIndexedDeferredLighting1.1.pdf
 http://lightindexed-deferredrender.googlecode.com/files/LightIndexedDeferredLighting1.1.pdf
 
 The scene consists of 255 lights with ~40 000 polygons. This demo allows you 

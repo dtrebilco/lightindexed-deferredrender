@@ -1,2 +1,14 @@
-# lightindexed-deferredrender
- Light Indexed Deferred Rendering - Before there was Forward+ and Clustered deferred rendering there was Light Indexed Deferred Rendering (ShaderX7)
+# Light Indexed Deferred Rendering
+
+Current rasterization based renderers utilize one of two main techniques for lighting, forward rendering and deferred rendering. However, both of these techniques have disadvantages. 
+Forward rendering does not scale well with complex lighting scenes and standard deferred rendering has high memory usage and trouble with transparency and MSAA.
+
+This research project aims to explore a middle ground between these two lighting techniques with the aim of keeping the key advantages of both.
+
+This research was featured in the book 
+ShaderX7 Advanced Rendering Techniques 
+Chapter 2.9 Light Indexed Deferred Rendering
+
+**Screen shot from the demo**
+![Screenshot](DemoScreenShot_small.jpg?raw=true "Demo screenshot")
+
