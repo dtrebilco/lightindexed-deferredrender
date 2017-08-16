@@ -17,4 +17,4 @@ Chapter 2.9 Light Indexed Deferred Rendering
 
 [Read the PDF paper](./LightIndexedDeferredLighting1.1.pdf)
 
-[Read the example docs] (Source/readme.txt)
+[Read the example docs](Source/readme.txt)
